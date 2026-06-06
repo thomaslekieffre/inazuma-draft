@@ -1,4 +1,6 @@
 export const SITE = {
+  url: 'https://ffi-6-0.vercel.app',
+  name: 'FFI 6-0',
   author: 'Thomas Lekieffre',
   github: 'https://github.com/thomaslekieffre',
   githubHandle: '/thomaslekieffre',
