@@ -1,5 +1,4 @@
 import { useAppSettings } from '../context/AppSettings'
-import { loadLocalStats } from '../lib/local-stats'
 
 interface Props {
   mode: 'classic' | 'memory'
@@ -9,8 +8,6 @@ interface Props {
 
 export default function Landing({ mode, onModeChange, onStart }: Props) {
   const { t } = useAppSettings()
-  const snapshot = loadLocalStats()
-  const hasStats = snapshot.runsStarted > 0
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in relative overflow-hidden">
@@ -50,16 +47,6 @@ export default function Landing({ mode, onModeChange, onStart }: Props) {
         <button type="button" onClick={onStart} className="btn-primary animate-pulse-gold text-xl px-12 rounded-lg">
           {t('landing.play')}
         </button>
-
-        {hasStats && (
-          <p className="text-xs text-iz-muted mt-6 tabular-nums">
-            {t('landing.statsTeaser', {
-              players: snapshot.uniquePlayerIds.length,
-              teams: snapshot.uniqueTeams.length,
-              finals: snapshot.finalsReached,
-            })}
-          </p>
-        )}
       </div>
     </div>
   )

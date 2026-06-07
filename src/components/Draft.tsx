@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import type { Player } from '../types'
-import { getDraftTeamNames, getTeamRoster, isPlayerInTeamRoster } from '../data/players'
-import { displayTeamName } from '../data/team-names'
+import type { DraftPool, Player } from '../types'
+import { getDraftPools, getTeamRoster, isPlayerInPoolRoster } from '../data/players'
+import { displayPoolLabel, draftPoolKey } from '../data/draft-pools'
 import {
   autoPlacePlayer,
   compatibleEmptySlots,
@@ -25,7 +25,7 @@ const POS_ORDER = ['GK', 'DF', 'MF', 'FW'] as const
 
 interface Props {
   mode: 'classic' | 'memory'
-  onComplete: (players: Player[], lineup: LineupMap, teamsRolled: string[]) => void
+  onComplete: (players: Player[], lineup: LineupMap, poolsRolled: string[]) => void
 }
 
 export default function Draft({ mode, onComplete }: Props) {
@@ -34,15 +34,15 @@ export default function Draft({ mode, onComplete }: Props) {
   const [drafted, setDrafted] = useState<Player[]>([])
   const [lineup, setLineup] = useState<LineupMap>({})
   const [formationId, setFormationId] = useState<FormationId>('433')
-  const [rolledTeam, setRolledTeam] = useState<string | null>(null)
+  const [rolledPool, setRolledPool] = useState<DraftPool | null>(null)
   const [rolledRoster, setRolledRoster] = useState<Player[]>([])
   const [rolling, setRolling] = useState(false)
   const [rerollsLeft, setRerollsLeft] = useState(TOTAL_REROLLS)
-  const [lastTeam, setLastTeam] = useState<string | null>(null)
-  const [teamsRolled, setTeamsRolled] = useState<string[]>([])
+  const [lastPoolKey, setLastPoolKey] = useState<string | null>(null)
+  const [poolsRolled, setPoolsRolled] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 
-  const teams = getDraftTeamNames()
+  const pools = getDraftPools()
   const missing = useMemo(() => missingPositions(lineup, formationId), [lineup, formationId])
   const formation = getFormation(formationId)
   const totalPower = useMemo(() => lineupPower(lineup, formationId), [lineup, formationId])
@@ -55,42 +55,42 @@ export default function Draft({ mode, onComplete }: Props) {
     setError(null)
   }
 
-  function drawTeam(isReroll: boolean) {
+  function drawPool(isReroll: boolean) {
     if (isReroll && rerollsLeft <= 0) return
     setError(null)
     setRolling(true)
-    setRolledTeam(null)
+    setRolledPool(null)
     setRolledRoster([])
     if (isReroll) setRerollsLeft(r => r - 1)
 
     setTimeout(() => {
-      let team: string
+      let pool: DraftPool
       do {
-        team = teams[Math.floor(Math.random() * teams.length)]
-      } while (team === lastTeam && teams.length > 1)
+        pool = pools[Math.floor(Math.random() * pools.length)]
+      } while (draftPoolKey(pool) === lastPoolKey && pools.length > 1)
 
-      setRolledTeam(team)
-      setRolledRoster(getTeamRoster(team))
-      setTeamsRolled(prev => [...prev, team])
+      setRolledPool(pool)
+      setRolledRoster(getTeamRoster(pool))
+      setPoolsRolled(prev => [...prev, draftPoolKey(pool)])
       setRolling(false)
     }, 800)
   }
 
   function roll() {
-    drawTeam(false)
+    drawPool(false)
   }
 
   function reroll() {
-    drawTeam(true)
+    drawPool(true)
   }
 
   function assertInRoster(player: Player): boolean {
-    if (!rolledTeam) {
+    if (!rolledPool) {
       setError(t('draft.err.rollFirst'))
       return false
     }
-    if (!isPlayerInTeamRoster(player, rolledTeam) || !rolledRoster.some(p => p.id === player.id)) {
-      setError(t('draft.err.notInRoster', { name: player.name, team: rolledTeam }))
+    if (!isPlayerInPoolRoster(player, rolledPool) || !rolledRoster.some(p => p.id === player.id)) {
+      setError(t('draft.err.notInRoster', { name: player.name, team: displayPoolLabel(rolledPool) }))
       return false
     }
     return true
@@ -117,33 +117,30 @@ export default function Draft({ mode, onComplete }: Props) {
     const nextDrafted = [...drafted, player]
     setLineup(nextLineup)
     setDrafted(nextDrafted)
-    setLastTeam(rolledTeam)
-    setRolledTeam(null)
+    setLastPoolKey(rolledPool ? draftPoolKey(rolledPool) : null)
+    setRolledPool(null)
     setRolledRoster([])
 
     if (nextDrafted.length >= TOTAL_ROUNDS) {
-      onComplete(nextDrafted, nextLineup, teamsRolled)
+      onComplete(nextDrafted, nextLineup, poolsRolled)
     } else {
       setRound(r => r + 1)
     }
   }
 
   const pool = useMemo(() => {
-    if (!rolledTeam || rolledRoster.length === 0) return []
+    if (!rolledPool || rolledRoster.length === 0) return []
     const draftedIds = new Set(drafted.map(d => d.id))
     return sortPlayersByPosition(
-      rolledRoster.filter(p => p.team === rolledTeam && !draftedIds.has(p.id))
+      rolledRoster.filter(p => !draftedIds.has(p.id)),
     )
-  }, [rolledTeam, rolledRoster, drafted])
+  }, [rolledPool, rolledRoster, drafted])
 
   const poolByPos = useMemo(() => {
     const groups: Record<string, Player[]> = { GK: [], DF: [], MF: [], FW: [] }
-    for (const p of pool) {
-      if (p.team !== rolledTeam) continue
-      groups[p.position].push(p)
-    }
+    for (const p of pool) groups[p.position].push(p)
     return groups
-  }, [pool, rolledTeam])
+  }, [pool])
 
   return (
     <div className="p-4 md:p-6">
@@ -183,7 +180,7 @@ export default function Draft({ mode, onComplete }: Props) {
 
         <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,480px)_260px] gap-6">
           <div className="flex flex-col min-h-[480px]">
-            {!rolledTeam && !rolling && (
+            {!rolledPool && !rolling && (
               <div className="flex-1 flex flex-col items-center justify-center gap-4">
                 <p className="text-iz-muted text-sm text-center">
                   {t('draft.rollHint', { rerolls: TOTAL_REROLLS })}
@@ -198,13 +195,13 @@ export default function Draft({ mode, onComplete }: Props) {
                 {t('draft.rolling')}
               </div>
             )}
-            {rolledTeam && !rolling && (
+            {rolledPool && !rolling && (
               <div className="animate-slide-up">
                 <div className="text-center mb-4 pb-4 border-b divider-iz">
                   <p className="text-xs text-iz-cyan uppercase tracking-widest mb-1 font-heading font-bold">
                     {t('draft.roster')}
                   </p>
-                  <h3 className="font-heading text-3xl font-black text-inazuma">{displayTeamName(rolledTeam)}</h3>
+                  <h3 className="font-heading text-3xl font-black text-inazuma">{displayPoolLabel(rolledPool)}</h3>
                   <p className="text-iz-muted text-sm mt-1">
                     {t('draft.pool', { left: pool.length, total: rolledRoster.length })}
                   </p>
@@ -239,7 +236,7 @@ export default function Draft({ mode, onComplete }: Props) {
                               key={p.id}
                               player={p}
                               mode={mode}
-                              teamLabel={displayTeamName(rolledTeam)}
+                              teamLabel={displayPoolLabel(rolledPool)}
                               onClick={canPick ? () => pick(p) : undefined}
                               disabled={!canPick}
                             />

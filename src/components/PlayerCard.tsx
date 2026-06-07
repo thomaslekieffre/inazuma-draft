@@ -1,5 +1,5 @@
 import type { Player } from '../types'
-import { POSITION_STAT_KEYS, playerRating } from '../lib/power'
+import { POSITION_STAT_KEYS, displayStatValue, playerRating } from '../lib/power'
 import { useAppSettings } from '../context/AppSettings'
 import PlayerAvatar from './PlayerAvatar'
 
@@ -78,7 +78,7 @@ export default function PlayerCard({ player, mode, onClick, selected, compact, d
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-iz-muted mb-2">
             {statKeys.map(key => (
               <span key={key}>
-                {t(`stats.${key}`)} <span className="text-iz-text font-medium tabular-nums">{player.stats[key]}</span>
+                {t(`stats.${key}`)} <span className="text-iz-text font-medium tabular-nums">{displayStatValue(player, key)}</span>
               </span>
             ))}
           </div>

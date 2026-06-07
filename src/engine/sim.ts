@@ -5,6 +5,11 @@ const ELEMENT_ADVANTAGE: Record<string, string> = {
   fire: 'wood', wood: 'air', air: 'earth', earth: 'fire',
 }
 
+export interface SimulateOptions {
+  /** Si true, égalité → tirs au but (demi / finale) */
+  decisive?: boolean
+}
+
 function elementBonus(attackers: Player[], defenders: Player[]): number {
   let bonus = 0
   for (const a of attackers) {
@@ -32,7 +37,82 @@ function clampGoals(goals: number, ratio: number, isFavourite: boolean): number 
   return Math.min(max, Math.max(0, goals))
 }
 
-export function simulateMatch(team1: Player[], team2: Player[], team1Name: string, team2Name: string): MatchResult {
+function penShooters(team: Player[]): Player[] {
+  const outfield = team.filter(p => p.position !== 'GK')
+  const pool = outfield.length > 0 ? outfield : team
+  return [...pool].sort((a, b) => b.stats.kick + b.stats.guts - (a.stats.kick + a.stats.guts))
+}
+
+function penChance(shooter: Player, gk: Player): number {
+  const shoot = shooter.stats.kick * 0.55 + shooter.stats.guts * 0.25 + shooter.stats.control * 0.2
+  const save = gk.stats.guard * 0.65 + gk.stats.guts * 0.35
+  return Math.max(0.18, Math.min(0.82, 0.48 + (shoot - save) / 175 + (Math.random() - 0.5) * 0.12))
+}
+
+function takePenalty(
+  shooter: Player,
+  gk: Player,
+  team: 0 | 1,
+  kick: number,
+): { scored: boolean; event: MatchEvent } {
+  const scored = Math.random() < penChance(shooter, gk)
+  return {
+    scored,
+    event: {
+      minute: 90 + kick,
+      type: 'penalty',
+      team,
+      player: shooter.name,
+      move: scored ? undefined : 'miss',
+    },
+  }
+}
+
+function simulatePenalties(
+  team1: Player[],
+  team2: Player[],
+): { penalties: [number, number]; events: MatchEvent[] } {
+  const gk1 = team1.find(p => p.position === 'GK') ?? team1[0]
+  const gk2 = team2.find(p => p.position === 'GK') ?? team2[0]
+  const s1 = penShooters(team1)
+  const s2 = penShooters(team2)
+  const events: MatchEvent[] = []
+  let p1 = 0
+  let p2 = 0
+  let kick = 0
+
+  for (let i = 0; i < 5; i++) {
+    kick++
+    const a = takePenalty(s1[i % s1.length], gk2, 0, kick)
+    events.push(a.event)
+    if (a.scored) p1++
+    kick++
+    const b = takePenalty(s2[i % s2.length], gk1, 1, kick)
+    events.push(b.event)
+    if (b.scored) p2++
+  }
+
+  while (p1 === p2) {
+    kick++
+    const a = takePenalty(s1[(kick / 2) % s1.length], gk2, 0, kick)
+    events.push(a.event)
+    if (a.scored) p1++
+    kick++
+    const b = takePenalty(s2[(kick / 2) % s2.length], gk1, 1, kick)
+    events.push(b.event)
+    if (b.scored) p2++
+  }
+
+  return { penalties: [p1, p2], events }
+}
+
+export function simulateMatch(
+  team1: Player[],
+  team2: Player[],
+  team1Name: string,
+  team2Name: string,
+  options?: SimulateOptions,
+): MatchResult {
   const power1 = teamPower(team1) * (1 + elementBonus(team1, team2))
   const power2 = teamPower(team2) * (1 + elementBonus(team2, team1))
   const total = power1 + power2
@@ -49,7 +129,7 @@ export function simulateMatch(team1: Player[], team2: Player[], team1Name: strin
   goals1 = clampGoals(goals1, ratio, true)
   goals2 = clampGoals(goals2, ratio, false)
 
-  if (goals1 === 0 && goals2 === 0) {
+  if (!options?.decisive && goals1 === 0 && goals2 === 0) {
     if (ratio >= 0.52) goals1 = 1
     else if (ratio <= 0.48) goals2 = 1
     else if (Math.random() < 0.5) goals1 = 1
@@ -65,7 +145,26 @@ export function simulateMatch(team1: Player[], team2: Player[], team1Name: strin
     ...generateGoalEvents(1, team2, goals2, mins2),
   ].sort((a, b) => a.minute - b.minute)
 
-  return { team1Name, team2Name, score: [goals1, goals2], events }
+  const result: MatchResult = { team1Name, team2Name, score: [goals1, goals2], events }
+
+  if (options?.decisive && goals1 === goals2) {
+    const pens = simulatePenalties(team1, team2)
+    result.penalties = pens.penalties
+    result.decidedByPenalties = true
+    result.events = [...events, ...pens.events]
+  }
+
+  return result
+}
+
+export function matchWinner(result: MatchResult): 0 | 1 | -1 {
+  if (result.score[0] > result.score[1]) return 0
+  if (result.score[1] > result.score[0]) return 1
+  if (result.penalties) {
+    if (result.penalties[0] > result.penalties[1]) return 0
+    if (result.penalties[1] > result.penalties[0]) return 1
+  }
+  return -1
 }
 
 export function simulateGroupStage(
@@ -120,7 +219,6 @@ export function sortStandings(standings: GroupStanding[]): GroupStanding[] {
   )
 }
 
-/** Simule les matchs restants d'une poule (hors paires déjà jouées). */
 export function simulateRemainingGroupMatches(
   teams: { name: string; players: Player[] }[],
   played: MatchResult[],

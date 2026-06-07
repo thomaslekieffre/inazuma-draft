@@ -1,9 +1,8 @@
 import { useState, useMemo } from 'react'
 import type { Player, MatchResult, GroupStanding } from '../types'
-import { FFI_BLOCK_A, FFI_BLOCK_B } from '../data/ffi-teams'
+import { rollTournamentField } from '../data/ffi-teams'
 import { ffiKnockoutPairings } from '../data/ffi-tournament'
-import { displayTeamName } from '../data/team-names'
-import { simulateMatch, simulateGroupStage, simulateRemainingGroupMatches } from '../engine/sim'
+import { simulateMatch, simulateGroupStage, simulateRemainingGroupMatches, matchWinner } from '../engine/sim'
 import { useAppSettings } from '../context/AppSettings'
 import type { TournamentOutcome } from '../lib/local-stats'
 import MatchView from './MatchView'
@@ -19,7 +18,6 @@ const PLAYER_NAME = 'Inazuma Japan'
 
 export default function Tournament({ playerTeam, onEnd }: Props) {
   const { t } = useAppSettings()
-  const label = (name: string) => displayTeamName(name)
   const [phase, setPhase] = useState<TourneyPhase>('intro')
   const [matchIdx, setMatchIdx] = useState(0)
   const [currentMatch, setCurrentMatch] = useState<MatchResult | null>(null)
@@ -31,28 +29,32 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
   const [finalResult, setFinalResult] = useState<MatchResult | null>(null)
   const [playerRank, setPlayerRank] = useState(0)
   const [resolvingGroup, setResolvingGroup] = useState(false)
+  const [{ playerOpponents, blockB: blockBTeams }] = useState(() => rollTournamentField())
+
+  const opponentByName = useMemo(() => {
+    const map = new Map<string, Player[]>()
+    for (const o of [...playerOpponents, ...blockBTeams]) {
+      map.set(o.name, o.players)
+    }
+    return map
+  }, [playerOpponents, blockBTeams])
 
   const blockA = useMemo(
     () => [
       { name: PLAYER_NAME, players: playerTeam },
-      ...FFI_BLOCK_A.map(t => ({ name: t.name, players: t.players })),
+      ...playerOpponents.map(o => ({ name: o.name, players: o.players })),
     ],
-    [playerTeam],
+    [playerTeam, playerOpponents],
   )
 
   const blockB = useMemo(
-    () => FFI_BLOCK_B.map(t => ({ name: t.name, players: t.players })),
-    [],
+    () => blockBTeams.map(o => ({ name: o.name, players: o.players })),
+    [blockBTeams],
   )
-
-  const playerOpponents = useMemo(() => FFI_BLOCK_A, [])
 
   function teamPlayers(name: string): Player[] {
     if (name === PLAYER_NAME) return playerTeam
-    const a = FFI_BLOCK_A.find(t => t.name === name)
-    if (a) return a.players
-    const b = FFI_BLOCK_B.find(t => t.name === name)
-    return b?.players ?? []
+    return opponentByName.get(name) ?? []
   }
 
   const wins = playerMatches.filter(m => m.score[0] > m.score[1]).length
@@ -115,16 +117,17 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
       teamPlayers(otherSemi.away),
       otherSemi.home,
       otherSemi.away,
+      { decisive: true },
     )
-    const otherWinner =
-      otherResult.score[0] > otherResult.score[1] ? otherSemi.home : otherSemi.away
-    setFinalOpponentName(otherWinner)
+    const otherWin = matchWinner(otherResult)
+    setFinalOpponentName(otherWin === 0 ? otherSemi.home : otherSemi.away)
 
     const result = simulateMatch(
       playerTeam,
       teamPlayers(playerSemiOpponent),
       PLAYER_NAME,
       playerSemiOpponent,
+      { decisive: true },
     )
     setSemiResult(result)
     setPhase('semis')
@@ -137,6 +140,7 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
       teamPlayers(finalOpponentName),
       PLAYER_NAME,
       finalOpponentName,
+      { decisive: true },
     )
     setFinalResult(result)
     setPhase('final')
@@ -145,11 +149,11 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
   function finishTournament() {
     if (!finalResult) return
     setPhase('done')
-    onEnd({ stage: 'final', won: finalResult.score[0] > finalResult.score[1] })
+    onEnd({ stage: 'final', won: matchWinner(finalResult) === 0 })
   }
 
-  const wonSemi = semiResult && semiResult.score[0] > semiResult.score[1]
-  const lostSemi = semiResult && semiResult.score[0] <= semiResult.score[1]
+  const wonSemi = semiResult && matchWinner(semiResult) === 0
+  const lostSemi = semiResult && matchWinner(semiResult) !== 0
 
   return (
     <div className="p-4 md:p-6">
@@ -162,8 +166,15 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
           <div className="animate-fade-in text-center">
             <p className="text-iz-text mb-6">{t('tournament.intro')}</p>
             <div className="grid grid-cols-2 gap-4 mb-8">
-              <TeamList title={t('tournament.blocA')} teams={[label(PLAYER_NAME), ...FFI_BLOCK_A.map(t => label(t.name))]} highlight={label(PLAYER_NAME)} />
-              <TeamList title={t('tournament.blocB')} teams={FFI_BLOCK_B.map(t => `${t.flag} ${label(t.name)}`)} />
+              <TeamList
+                title={t('tournament.blocA')}
+                teams={[PLAYER_NAME, ...playerOpponents.map(o => o.name)]}
+                highlight={PLAYER_NAME}
+              />
+              <TeamList
+                title={t('tournament.blocB')}
+                teams={blockBTeams.map(o => `${o.flag} ${o.name}`)}
+              />
             </div>
             <button type="button" onClick={startGroups} className="btn-primary">{t('tournament.start')}</button>
           </div>
@@ -183,9 +194,11 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
             {!currentMatch ? (
               <div className="card p-6 text-center">
                 <p className="text-iz-text mb-2 font-heading text-lg">
-                  {t('tournament.vs', { home: label(PLAYER_NAME), away: label(playerOpponents[matchIdx].name) })}
+                  {t('tournament.vs', { home: PLAYER_NAME, away: playerOpponents[matchIdx].name })}
                 </p>
-                <p className="text-iz-muted text-sm mb-6">{playerOpponents[matchIdx].flag} {playerOpponents[matchIdx].country}</p>
+                <p className="text-iz-muted text-sm mb-6">
+                  {playerOpponents[matchIdx].flag} {playerOpponents[matchIdx].country}
+                </p>
                 <button type="button" onClick={runCurrentMatch} className="btn-primary w-full">
                   {t('tournament.playMatch')}
                 </button>
@@ -252,13 +265,13 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
           <div className="animate-fade-in">
             <h3 className="font-heading text-3xl font-black text-inazuma text-center mb-6">🏆 {t('tournament.final')}</h3>
             <MatchView result={finalResult} highlightTeam={PLAYER_NAME} />
-            <button type="button" onClick={finishTournament} className="btn-primary mt-6 w-full">{t('tournament.seeResult')}</button>
+            <button type="button" onClick={finishTournament} className="btn-primary mt-6 w-full">{t('tournament.finish')}</button>
           </div>
         )}
 
         {phase === 'done' && finalResult && (
           <div className="animate-fade-in text-center">
-            {finalResult.score[0] > finalResult.score[1] ? (
+            {matchWinner(finalResult) === 0 ? (
               <h3 className="font-heading text-4xl font-black text-inazuma">{t('tournament.champion')}</h3>
             ) : (
               <>
@@ -278,8 +291,8 @@ function TeamList({ title, teams, highlight }: { title: string; teams: string[];
     <div className="card p-3 text-left">
       <h4 className="font-heading text-xs text-iz-cyan uppercase mb-2 font-bold">{title}</h4>
       <ul className="text-xs space-y-1">
-        {teams.map(t => (
-          <li key={t} className={t === highlight ? 'text-accent font-bold' : 'text-iz-text'}>{t}</li>
+        {teams.map(team => (
+          <li key={team} className={team === highlight ? 'text-accent font-bold' : 'text-iz-text'}>{team}</li>
         ))}
       </ul>
     </div>
@@ -298,7 +311,6 @@ function StandingsTable({
   className?: string
 }) {
   const { t } = useAppSettings()
-  const label = (name: string) => displayTeamName(name)
 
   return (
     <div className={`card p-3 text-left ${className}`}>
@@ -316,7 +328,7 @@ function StandingsTable({
           {standings.map((s, i) => (
             <tr key={s.teamName} className={s.teamName === highlight ? 'text-accent font-bold' : 'text-iz-text'}>
               <td className="py-1">{i + 1}</td>
-              <td>{label(s.teamName)}</td>
+              <td>{s.teamName}</td>
               <td className="text-center">{s.points}</td>
               <td className="text-center">{s.gf - s.ga}</td>
             </tr>

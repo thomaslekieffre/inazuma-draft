@@ -1,6 +1,16 @@
 export type Element = 'fire' | 'wood' | 'air' | 'earth'
 export type Position = 'GK' | 'DF' | 'MF' | 'FW'
 
+export type GameId = 'IE1' | 'IE2' | 'IE3' | 'GO1' | 'GO2' | 'GO3'
+
+export interface DraftPool {
+  game: GameId
+  teamId: string
+  label: string
+}
+
+export type DraftPoolKey = `${GameId}:${string}`
+
 export interface PlayerStats {
   kick: number
   body: number
@@ -14,6 +24,7 @@ export interface PlayerStats {
 export interface Player {
   id: string
   name: string
+  game: GameId
   team: string
   element: Element
   position: Position
@@ -23,7 +34,7 @@ export interface Player {
 
 export interface MatchEvent {
   minute: number
-  type: 'goal' | 'save' | 'hissatsu'
+  type: 'goal' | 'save' | 'hissatsu' | 'penalty'
   team: 0 | 1
   player: string
   move?: string
@@ -34,6 +45,9 @@ export interface MatchResult {
   team2Name: string
   score: [number, number]
   events: MatchEvent[]
+  /** Tirs au but si match nul en temps réglementaire (match à élimination) */
+  penalties?: [number, number]
+  decidedByPenalties?: boolean
 }
 
 export interface GroupStanding {
