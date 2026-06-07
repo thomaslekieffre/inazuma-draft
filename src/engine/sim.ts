@@ -9,20 +9,27 @@ function elementBonus(attackers: Player[], defenders: Player[]): number {
   let bonus = 0
   for (const a of attackers) {
     for (const d of defenders) {
-      if (ELEMENT_ADVANTAGE[a.element] === d.element) bonus += 0.02
-      else if (ELEMENT_ADVANTAGE[d.element] === a.element) bonus -= 0.02
+      if (ELEMENT_ADVANTAGE[a.element] === d.element) bonus += 0.015
+      else if (ELEMENT_ADVANTAGE[d.element] === a.element) bonus -= 0.015
     }
   }
-  return bonus
+  return Math.max(-0.12, Math.min(0.12, bonus))
 }
 
 function generateGoalEvents(scoringTeam: 0 | 1, players: Player[], count: number, matchMinutes: number[]): MatchEvent[] {
   const scorers = players.filter(p => p.position === 'FW' || p.position === 'MF')
+  if (scorers.length === 0) return []
   return matchMinutes.slice(0, count).map(minute => {
     const player = scorers[Math.floor(Math.random() * scorers.length)]
     const move = player.hissatsu[Math.floor(Math.random() * player.hissatsu.length)]
     return { minute, type: 'goal' as const, team: scoringTeam, player: player.name, move }
   })
+}
+
+function clampGoals(goals: number, ratio: number, isFavourite: boolean): number {
+  const gap = Math.abs(ratio - 0.5)
+  const max = gap > 0.25 ? (isFavourite ? 6 : 4) : 5
+  return Math.min(max, Math.max(0, goals))
 }
 
 export function simulateMatch(team1: Player[], team2: Player[], team1Name: string, team2Name: string): MatchResult {
@@ -31,11 +38,23 @@ export function simulateMatch(team1: Player[], team2: Player[], team1Name: strin
   const total = power1 + power2
   const ratio = power1 / total
 
-  const avgGoals = 2.5
-  const r1 = Math.random()
-  const r2 = Math.random()
-  const goals1 = Math.max(0, Math.round(avgGoals * ratio * 2 + (r1 - 0.5) * 3))
-  const goals2 = Math.max(0, Math.round(avgGoals * (1 - ratio) * 2 + (r2 - 0.5) * 3))
+  const base = 2.2
+  let eg1 = base * ratio * 1.5
+  let eg2 = base * (1 - ratio) * 1.5
+
+  const noise = () => (Math.random() - 0.5) * 1.2
+  let goals1 = Math.round(eg1 + noise())
+  let goals2 = Math.round(eg2 + noise())
+
+  goals1 = clampGoals(goals1, ratio, true)
+  goals2 = clampGoals(goals2, ratio, false)
+
+  if (goals1 === 0 && goals2 === 0) {
+    if (ratio >= 0.52) goals1 = 1
+    else if (ratio <= 0.48) goals2 = 1
+    else if (Math.random() < 0.5) goals1 = 1
+    else goals2 = 1
+  }
 
   const allMinutes = Array.from({ length: goals1 + goals2 }, () => Math.floor(Math.random() * 88) + 2).sort((a, b) => a - b)
   const mins1 = allMinutes.filter((_, i) => i < goals1)

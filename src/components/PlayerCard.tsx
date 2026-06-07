@@ -1,4 +1,6 @@
 import type { Player } from '../types'
+import { POSITION_STAT_KEYS, playerRating } from '../lib/power'
+import { useAppSettings } from '../context/AppSettings'
 import PlayerAvatar from './PlayerAvatar'
 
 const POS_CLASS: Record<string, string> = {
@@ -23,6 +25,7 @@ interface Props {
 }
 
 export default function PlayerCard({ player, mode, onClick, selected, compact, disabled, teamLabel }: Props) {
+  const { t } = useAppSettings()
   const border = selected
     ? 'border-iz-orange ring-2 ring-iz-orange/50 shadow-iz-orange'
     : disabled
@@ -45,6 +48,9 @@ export default function PlayerCard({ player, mode, onClick, selected, compact, d
     )
   }
 
+  const rating = playerRating(player)
+  const statKeys = POSITION_STAT_KEYS[player.position]
+
   return (
     <button
       type="button"
@@ -65,14 +71,16 @@ export default function PlayerCard({ player, mode, onClick, selected, compact, d
       </div>
       {mode === 'classic' && (
         <>
-          <div className="grid grid-cols-4 gap-1 text-xs text-iz-muted mb-2">
-            <span>K {player.stats.kick}</span>
-            <span>B {player.stats.body}</span>
-            <span>C {player.stats.control}</span>
-            <span>G {player.stats.guard}</span>
-            <span>S {player.stats.speed}</span>
-            <span>St {player.stats.stamina}</span>
-            <span>Gu {player.stats.guts}</span>
+          <div className="flex items-baseline justify-between mb-2 px-1">
+            <span className="text-xs text-iz-muted font-heading">{t('stats.rating')}</span>
+            <span className="text-xl font-heading font-black text-iz-cyan tabular-nums">{rating}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-iz-muted mb-2">
+            {statKeys.map(key => (
+              <span key={key}>
+                {t(`stats.${key}`)} <span className="text-iz-text font-medium tabular-nums">{player.stats[key]}</span>
+              </span>
+            ))}
           </div>
           {player.hissatsu[0] && (
             <div className="text-xs text-hissatsu truncate font-heading">⚡ {player.hissatsu[0]}</div>

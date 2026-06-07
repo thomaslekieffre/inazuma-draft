@@ -9,6 +9,18 @@ import Draft from './components/Draft'
 import LineupReview from './components/LineupReview'
 import Tournament from './components/Tournament'
 import PlayerCard from './components/PlayerCard'
+import { trackEvent } from './lib/analytics'
+import {
+  recordGlobalDraftComplete,
+  recordGlobalFinalReached,
+  recordGlobalRunStarted,
+} from './lib/global-metrics'
+import {
+  recordDraftComplete,
+  recordRunStarted,
+  recordTournamentOutcome,
+  type TournamentOutcome,
+} from './lib/local-stats'
 
 export default function App() {
   const { t } = useAppSettings()
@@ -28,7 +40,16 @@ export default function App() {
   if (phase === 'landing') {
     return (
       <AppLayout variant="landing">
-        <Landing mode={mode} onModeChange={setMode} onStart={() => setPhase('draft')} />
+        <Landing
+          mode={mode}
+          onModeChange={setMode}
+          onStart={() => {
+            recordRunStarted()
+            recordGlobalRunStarted()
+            trackEvent('run_started', { mode })
+            setPhase('draft')
+          }}
+        />
       </AppLayout>
     )
   }
@@ -38,7 +59,14 @@ export default function App() {
       <AppLayout>
         <Draft
           mode={mode}
-          onComplete={(p, l) => { setDrafted(p); setLineup(l); setPhase('lineup') }}
+          onComplete={(p, l, teamsRolled) => {
+            recordDraftComplete(p, teamsRolled)
+            recordGlobalDraftComplete()
+            trackEvent('draft_complete', { players: p.length, teams_rolled: teamsRolled.length })
+            setDrafted(p)
+            setLineup(l)
+            setPhase('lineup')
+          }}
         />
       </AppLayout>
     )
@@ -63,7 +91,17 @@ export default function App() {
       <AppLayout>
         <Tournament
           playerTeam={lineupToArray(lineup)}
-          onEnd={w => { setWon(w); setPhase('result') }}
+          onEnd={(outcome: TournamentOutcome) => {
+            recordTournamentOutcome(outcome)
+            if (outcome.stage === 'final') {
+              recordGlobalFinalReached()
+              trackEvent('final_reached', { won: outcome.won })
+            } else {
+              trackEvent('tournament_out', { stage: outcome.stage })
+            }
+            setWon(outcome.stage === 'final' && outcome.won)
+            setPhase('result')
+          }}
         />
       </AppLayout>
     )

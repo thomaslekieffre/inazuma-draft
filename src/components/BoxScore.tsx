@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { getFormationSlotsByLine, type FormationId, type LineupMap, isSlotValid } from '../lib/lineup'
-import { lineupPower, playerPower } from '../lib/power'
+import { lineupPower, playerRating } from '../lib/power'
 import { useAppSettings } from '../context/AppSettings'
 import PlayerAvatar from './PlayerAvatar'
 
@@ -27,7 +27,7 @@ export default function BoxScore({ lineup, formationId = '433', onSlotClick, sel
       </div>
       {showPower && (
         <p className="text-xs text-iz-muted mb-2">
-          {t('lineup.power')}{' '}
+          {t('stats.teamPower')}{' '}
           <span className="text-iz-cyan font-bold tabular-nums">{totalPower}</span>
         </p>
       )}
@@ -53,7 +53,7 @@ export default function BoxScore({ lineup, formationId = '433', onSlotClick, sel
                   <span className="truncate font-medium flex-1 text-iz-text">{player.name}</span>
                   <span className={`text-xs font-bold shrink-0 ${valid ? 'text-emerald-400' : 'text-red-400'}`}>
                     {showPower && (
-                      <span className="text-iz-cyan mr-1 tabular-nums">{Math.round(playerPower(player))}</span>
+                      <span className="text-iz-cyan mr-1 tabular-nums">{playerRating(player)}</span>
                     )}
                     {valid ? '✓' : '✗'} {player.position}
                   </span>

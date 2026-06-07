@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import type { Player } from '../types'
 import { getDraftTeamNames, getTeamRoster, isPlayerInTeamRoster } from '../data/players'
+import { displayTeamName } from '../data/team-names'
 import {
   autoPlacePlayer,
   compatibleEmptySlots,
@@ -24,7 +25,7 @@ const POS_ORDER = ['GK', 'DF', 'MF', 'FW'] as const
 
 interface Props {
   mode: 'classic' | 'memory'
-  onComplete: (players: Player[], lineup: LineupMap) => void
+  onComplete: (players: Player[], lineup: LineupMap, teamsRolled: string[]) => void
 }
 
 export default function Draft({ mode, onComplete }: Props) {
@@ -38,6 +39,7 @@ export default function Draft({ mode, onComplete }: Props) {
   const [rolling, setRolling] = useState(false)
   const [rerollsLeft, setRerollsLeft] = useState(TOTAL_REROLLS)
   const [lastTeam, setLastTeam] = useState<string | null>(null)
+  const [teamsRolled, setTeamsRolled] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const teams = getDraftTeamNames()
@@ -69,6 +71,7 @@ export default function Draft({ mode, onComplete }: Props) {
 
       setRolledTeam(team)
       setRolledRoster(getTeamRoster(team))
+      setTeamsRolled(prev => [...prev, team])
       setRolling(false)
     }, 800)
   }
@@ -119,7 +122,7 @@ export default function Draft({ mode, onComplete }: Props) {
     setRolledRoster([])
 
     if (nextDrafted.length >= TOTAL_ROUNDS) {
-      onComplete(nextDrafted, nextLineup)
+      onComplete(nextDrafted, nextLineup, teamsRolled)
     } else {
       setRound(r => r + 1)
     }
@@ -156,7 +159,7 @@ export default function Draft({ mode, onComplete }: Props) {
             </div>
             {mode === 'classic' && (
               <div className="text-xs mt-0.5">
-                {t('lineup.power')}{' '}
+                {t('stats.teamPower')}{' '}
                 <span className="text-iz-cyan font-bold tabular-nums">{totalPower}</span>
               </div>
             )}
@@ -201,7 +204,7 @@ export default function Draft({ mode, onComplete }: Props) {
                   <p className="text-xs text-iz-cyan uppercase tracking-widest mb-1 font-heading font-bold">
                     {t('draft.roster')}
                   </p>
-                  <h3 className="font-heading text-3xl font-black text-inazuma">{rolledTeam}</h3>
+                  <h3 className="font-heading text-3xl font-black text-inazuma">{displayTeamName(rolledTeam)}</h3>
                   <p className="text-iz-muted text-sm mt-1">
                     {t('draft.pool', { left: pool.length, total: rolledRoster.length })}
                   </p>
@@ -236,7 +239,7 @@ export default function Draft({ mode, onComplete }: Props) {
                               key={p.id}
                               player={p}
                               mode={mode}
-                              teamLabel={rolledTeam}
+                              teamLabel={displayTeamName(rolledTeam)}
                               onClick={canPick ? () => pick(p) : undefined}
                               disabled={!canPick}
                             />

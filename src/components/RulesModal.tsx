@@ -5,6 +5,7 @@ import type { TranslationKey } from '../i18n/translations'
 const SECTIONS: { title: TranslationKey; body: TranslationKey }[] = [
   { title: 'rules.sections.draft.title', body: 'rules.sections.draft.body' },
   { title: 'rules.sections.lineup.title', body: 'rules.sections.lineup.body' },
+  { title: 'rules.sections.stats.title', body: 'rules.sections.stats.body' },
   { title: 'rules.sections.ffi.title', body: 'rules.sections.ffi.body' },
   { title: 'rules.sections.win.title', body: 'rules.sections.win.body' },
 ]

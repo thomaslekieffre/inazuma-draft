@@ -92,7 +92,7 @@ export default function LineupReview({ players, lineup: initialLineup, mode, onL
           {t('lineup.title')} <span className="text-accent">{t('lineup.team')}</span>
         </h2>
         <p className="text-iz-muted text-sm mb-4">
-          {formation.label} · {t('lineup.power')}{' '}
+          {formation.label} · {t('stats.teamPower')}{' '}
           <span className="text-iz-cyan font-bold">{totalPower}</span>
           {movingPlayer && (
             <span className="text-accent ml-2">

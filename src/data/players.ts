@@ -1,5 +1,6 @@
 import type { Player, Element, Position } from '../types'
 
+/** Rosters: Fandom IE3 (scripts/fandom-rosters-final.json). Stats: IE3 lv99. Regénérer: npm run data:rebuild */
 function p(name: string, team: string, element: Element, position: Position, kick: number, body: number, control: number, guard: number, speed: number, stamina: number, guts: number, hissatsu: string[]): Player {
   return {
     id: `${team.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`.replace(/-+$/,''),
@@ -186,8 +187,8 @@ export const ALL_PLAYERS: Player[] = [
   p("Indigo", "Team K", "earth", "GK", 52, 50, 51, 76, 36, 42, 68, ["Full Power Shield", "Worm Hole", "Road Roller", "Fist of Justice"]),
   p("Grigio", "Team K", "wood", "GK", 42, 64, 48, 67, 32, 63, 38, ["Power Shield", "Gigant Wall", "Rainbow Arc", "Ghost Pull"]),
   p("Roseo", "Team K", "fire", "DF", 40, 44, 40, 69, 52, 45, 70, ["Killer Slide", "Harvest", "Shadow Stitch", "Field of Force"]),
-  p("Azbel", "Team K", "air", "DF", 53, 53, 52, 71, 44, 54, 65, ["Killer Slide", "Gravitation", "Sliding Goal", "Planet Shield"]),
-  p("Nero", "Team K", "earth", "DF", 41, 62, 46, 54, 67, 33, 56, ["Killer Slide", "Spider Web", "Triple Boost", "Big Spider"]),
+  p("Azubel", "Team K", "air", "DF", 53, 53, 52, 71, 44, 54, 65, ["Killer Slide", "Gravitation", "Sliding Goal", "Planet Shield"]),
+  p("Nello", "Team K", "earth", "DF", 41, 62, 46, 54, 67, 33, 56, ["Killer Slide", "Spider Web", "Triple Boost", "Big Spider"]),
   p("Azzurro", "Team K", "air", "DF", 44, 64, 64, 63, 40, 45, 52, ["Killer Slide", "Never Give Up", "Whirlwind Cut", "Diabolical Cut"]),
   p("Pardo", "Team K", "wood", "DF", 40, 64, 50, 52, 44, 52, 55, ["Spiral Shot", "Harvest", "Abaddon Drop", "Counter Strike"]),
   p("Verdio", "Team K", "wood", "MF", 37, 57, 68, 52, 51, 45, 73, ["Breakthrough", "No Element", "Clone Defence", "Heavy Mettle"]),
@@ -445,12 +446,10 @@ export function getTeamNames(): string[] {
   return [...new Set(ALL_PLAYERS.map(p => p.team))].sort()
 }
 
-/** Toutes les équipes avec un roster en base — éligibles au roll */
 export function getDraftTeamNames(): string[] {
   return getTeamNames()
 }
 
-/** Roster exact d'une équipe — aucun joueur d'une autre équipe */
 export function getPlayersByTeam(team: string): Player[] {
   return ALL_PLAYERS.filter(p => p.team === team)
 }

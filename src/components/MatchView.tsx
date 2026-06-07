@@ -1,4 +1,5 @@
 import type { MatchResult } from '../types'
+import { displayTeamName } from '../data/team-names'
 import { useAppSettings } from '../context/AppSettings'
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 
 export default function MatchView({ result, highlightTeam }: Props) {
   const { t } = useAppSettings()
+  const label = (name: string) => displayTeamName(name)
   const [s1, s2] = result.score
   const winner = s1 > s2 ? 0 : s2 > s1 ? 1 : -1
 
@@ -15,12 +17,12 @@ export default function MatchView({ result, highlightTeam }: Props) {
     <div className="card p-4 animate-fade-in">
       <div className="flex items-center justify-center gap-6 mb-4">
         <div className={`text-center flex-1 ${winner === 0 ? 'text-accent' : 'text-iz-text'}`}>
-          <div className="text-sm text-iz-muted mb-1 font-heading">{result.team1Name}</div>
+          <div className="text-sm text-iz-muted mb-1 font-heading">{label(result.team1Name)}</div>
           <div className="text-4xl font-heading font-black">{s1}</div>
         </div>
         <div className="text-iz-cyan font-heading font-bold">—</div>
         <div className={`text-center flex-1 ${winner === 1 ? 'text-accent' : 'text-iz-text'}`}>
-          <div className="text-sm text-iz-muted mb-1 font-heading">{result.team2Name}</div>
+          <div className="text-sm text-iz-muted mb-1 font-heading">{label(result.team2Name)}</div>
           <div className="text-4xl font-heading font-black">{s2}</div>
         </div>
       </div>

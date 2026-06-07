@@ -52,9 +52,11 @@ Build prod : `npm run build` · preview : `npm run preview`
 
 ## Contenu
 
-- **399 joueurs** (stats IE3 niveau 99, 26 équipes draftables)
+- **403 joueurs** (stats IE3, 26 équipes draftables)
 - **9 adversaires FFI** (Orpheus → Little Gigant)
-- Portraits joueurs (zukan + fallbacks)
+- Rosters canon : [Fandom IE3](https://inazuma-eleven.fandom.com) → `scripts/fandom-rosters-final.json`
+- Regénérer la DB : `npm run data:rebuild` · vérifier : `npm run data:audit`
+- Portraits joueurs (scrapes + fallbacks)
 - **FR / EN** · thème clair / sombre
 
 ---

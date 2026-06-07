@@ -6,9 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "data:audit": "node scripts/audit-rosters.mjs",
+    "data:rebuild": "node scripts/rebuild-db.mjs"
   },
   "dependencies": {
+    "@vercel/analytics": "^2.0.1",
+    "posthog-js": "^1.382.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
