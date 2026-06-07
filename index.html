@@ -4,7 +4,7 @@
     <script>
       try {
         var t = localStorage.getItem('iz-theme');
-        if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+        document.documentElement.dataset.theme = (t === 'light' || t === 'dark') ? t : 'light';
       } catch (e) {}
     </script>
     <meta charset="UTF-8" />
@@ -12,7 +12,7 @@
     <meta name="description" content="FFI 6-0 — Draft ton Inazuma Japan et remporte le FFI. Fan game Inazuma Eleven : 399 joueurs, 11 rounds, tournoi Liocott Island." />
     <meta name="author" content="Thomas Lekieffre" />
     <meta name="keywords" content="Inazuma Eleven, Inazuma, FFI, draft, fan game, football, Liocott Island" />
-    <meta name="theme-color" content="#ff6b1a" />
+    <meta name="theme-color" content="#1a6fc9" />
     <meta name="robots" content="index, follow" />
 
     <meta property="og:type" content="website" />
@@ -37,7 +37,7 @@
 
     <link rel="canonical" href="https://ffi-6-0.vercel.app/" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Nunito+Sans:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
     <title>FFI 6-0 — Inazuma Draft</title>
   </head>
   <body>

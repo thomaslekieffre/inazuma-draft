@@ -5,9 +5,9 @@ import { displayPoolLabel, draftPoolKey } from '../data/draft-pools'
 import {
   autoPlacePlayer,
   compatibleEmptySlots,
+  DEFAULT_FORMATION,
   getFormation,
   missingPositions,
-  remapLineupToFormation,
   sortPlayersByPosition,
   type FormationId,
   type LineupMap,
@@ -25,7 +25,7 @@ const POS_ORDER = ['GK', 'DF', 'MF', 'FW'] as const
 
 interface Props {
   mode: 'classic' | 'memory'
-  onComplete: (players: Player[], lineup: LineupMap, poolsRolled: string[]) => void
+  onComplete: (players: Player[], lineup: LineupMap, poolsRolled: string[], formationId: FormationId) => void
 }
 
 export default function Draft({ mode, onComplete }: Props) {
@@ -33,7 +33,7 @@ export default function Draft({ mode, onComplete }: Props) {
   const [round, setRound] = useState(1)
   const [drafted, setDrafted] = useState<Player[]>([])
   const [lineup, setLineup] = useState<LineupMap>({})
-  const [formationId, setFormationId] = useState<FormationId>('433')
+  const [formationId, setFormationId] = useState<FormationId>(DEFAULT_FORMATION)
   const [rolledPool, setRolledPool] = useState<DraftPool | null>(null)
   const [rolledRoster, setRolledRoster] = useState<Player[]>([])
   const [rolling, setRolling] = useState(false)
@@ -47,11 +47,11 @@ export default function Draft({ mode, onComplete }: Props) {
   const formation = getFormation(formationId)
   const totalPower = useMemo(() => lineupPower(lineup, formationId), [lineup, formationId])
 
+  const formationLocked = drafted.length > 0
+
   function changeFormation(id: FormationId) {
+    if (formationLocked) return
     setFormationId(id)
-    if (Object.keys(lineup).length > 0) {
-      setLineup(remapLineupToFormation(lineup, id))
-    }
     setError(null)
   }
 
@@ -122,7 +122,7 @@ export default function Draft({ mode, onComplete }: Props) {
     setRolledRoster([])
 
     if (nextDrafted.length >= TOTAL_ROUNDS) {
-      onComplete(nextDrafted, nextLineup, poolsRolled)
+      onComplete(nextDrafted, nextLineup, poolsRolled, formationId)
     } else {
       setRound(r => r + 1)
     }
@@ -143,34 +143,35 @@ export default function Draft({ mode, onComplete }: Props) {
   }, [pool])
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 sm:p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading text-2xl font-bold text-iz-heading">
-            {t('draft.title')} <span className="text-accent">{t('draft.team')}</span>
-          </h2>
-          <div className="text-sm text-iz-muted text-right">
-            <div>{t('draft.round', { current: round, total: TOTAL_ROUNDS })}</div>
-            <div className="text-xs mt-0.5">
+        <div className="iz-panel mb-3 sm:mb-4">
+          <div className="iz-panel-head flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-4">
+            <span className="truncate">
+              {t('draft.title')} — {t('draft.team')}
+            </span>
+            <span className="text-[0.65rem] opacity-90 normal-case tracking-normal font-semibold shrink-0">
+              {t('draft.round', { current: round, total: TOTAL_ROUNDS })}
+              {' · '}
               {t('draft.rerollsGlobal', { left: rerollsLeft, total: TOTAL_REROLLS })}
-            </div>
-            {mode === 'classic' && (
-              <div className="text-xs mt-0.5">
-                {t('stats.teamPower')}{' '}
-                <span className="text-iz-cyan font-bold tabular-nums">{totalPower}</span>
-              </div>
-            )}
+              {mode === 'classic' && (
+                <>
+                  {' · '}
+                  {t('stats.teamPower')}{' '}
+                  <strong className="tabular-nums">{totalPower}</strong>
+                </>
+              )}
+            </span>
           </div>
+          {missing.length > 0 && (
+            <div className="px-4 py-2 text-xs text-iz-muted border-b divider-iz bg-iz-deep/50">
+              {t('draft.missing')}{' '}
+              {missing.map(m => (
+                <span key={m.role} className="text-iz-blue font-bold mr-2">{m.count}× {m.role}</span>
+              ))}
+            </div>
+          )}
         </div>
-
-        {missing.length > 0 && (
-          <p className="text-xs text-iz-muted mb-4">
-            {t('draft.missing')}{' '}
-            {missing.map(m => (
-              <span key={m.role} className="text-iz-cyan mr-2 font-bold">{m.count}× {m.role}</span>
-            ))}
-          </p>
-        )}
 
         {error && (
           <div className="mb-4 alert-error animate-fade-in">
@@ -178,85 +179,91 @@ export default function Draft({ mode, onComplete }: Props) {
           </div>
         )}
 
-        <div className="grid lg:grid-cols-[minmax(0,1fr)_minmax(380px,480px)_260px] gap-6">
-          <div className="flex flex-col min-h-[480px]">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(300px,480px)_minmax(220px,260px)] gap-3 sm:gap-4">
+          <div className="iz-panel min-h-[min(50vh,480px)] sm:min-h-[480px] flex flex-col order-1">
             {!rolledPool && !rolling && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4">
-                <p className="text-iz-muted text-sm text-center">
+              <div className="iz-panel-body flex-1 flex flex-col items-center justify-center gap-4">
+                <p className="text-iz-muted text-sm text-center max-w-xs">
                   {t('draft.rollHint', { rerolls: TOTAL_REROLLS })}
                 </p>
-                <button type="button" onClick={roll} className="btn-primary text-2xl px-16 py-6 animate-pulse-gold">
+                <button type="button" onClick={roll} className="btn-primary text-xl px-14 py-5 animate-pulse-gold">
                   {t('draft.roll')}
                 </button>
               </div>
             )}
             {rolling && (
-              <div className="flex-1 flex items-center justify-center text-2xl font-heading text-accent animate-pulse">
+              <div className="iz-panel-body flex-1 flex items-center justify-center text-xl font-heading text-accent animate-pulse">
                 {t('draft.rolling')}
               </div>
             )}
             {rolledPool && !rolling && (
-              <div className="animate-slide-up">
-                <div className="text-center mb-4 pb-4 border-b divider-iz">
-                  <p className="text-xs text-iz-cyan uppercase tracking-widest mb-1 font-heading font-bold">
-                    {t('draft.roster')}
-                  </p>
-                  <h3 className="font-heading text-3xl font-black text-inazuma">{displayPoolLabel(rolledPool)}</h3>
-                  <p className="text-iz-muted text-sm mt-1">
-                    {t('draft.pool', { left: pool.length, total: rolledRoster.length })}
-                  </p>
+              <div className="animate-slide-up flex flex-col flex-1">
+                <div className="iz-panel-head text-center !text-base !tracking-wide">
+                  {displayPoolLabel(rolledPool)}
+                </div>
+                <div className="px-4 py-2 text-center text-xs text-iz-muted border-b divider-iz">
+                  {t('draft.pool', { left: pool.length, total: rolledRoster.length })}
                   {rerollsLeft > 0 && (
                     <button
                       type="button"
                       onClick={reroll}
                       disabled={rolling}
-                      className="btn-secondary mt-3 text-sm"
+                      className="btn-secondary ml-3 text-[0.65rem] py-1 px-2"
                     >
                       {t('draft.reroll', { left: rerollsLeft, total: TOTAL_REROLLS })}
                     </button>
                   )}
                 </div>
-
-                {POS_ORDER.map(pos => {
-                  const players = poolByPos[pos]
-                  if (players.length === 0) return null
-                  const slotsLeft = compatibleEmptySlots(lineup, players[0], formationId).length
-                  return (
-                    <div key={pos} className="mb-4">
-                      <h4 className="font-heading text-xs text-iz-cyan uppercase mb-2 flex items-center gap-2 font-bold">
-                        {pos}
-                        <span className="text-iz-muted">({players.length})</span>
-                        {slotsLeft === 0 && <span className="text-red-400">— {t('draft.full')}</span>}
-                      </h4>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        {players.map(p => {
-                          const canPick = compatibleEmptySlots(lineup, p, formationId).length > 0
-                          return (
-                            <PlayerCard
-                              key={p.id}
-                              player={p}
-                              mode={mode}
-                              teamLabel={displayPoolLabel(rolledPool)}
-                              onClick={canPick ? () => pick(p) : undefined}
-                              disabled={!canPick}
-                            />
-                          )
-                        })}
+                <div className="iz-panel-body flex-1 overflow-y-auto max-h-[min(65dvh,560px)] sm:max-h-[70vh]">
+                  {POS_ORDER.map(pos => {
+                    const players = poolByPos[pos]
+                    if (players.length === 0) return null
+                    const slotsLeft = compatibleEmptySlots(lineup, players[0], formationId).length
+                    return (
+                      <div key={pos} className="iz-pos-section">
+                        <div className="iz-pos-section__label">
+                          <span>{pos}</span>
+                          <span className="text-iz-muted font-normal">({players.length})</span>
+                          {slotsLeft === 0 && <span className="text-red-500 ml-auto">— {t('draft.full')}</span>}
+                        </div>
+                        <div className="flex flex-col gap-2 stagger">
+                          {players.map(p => {
+                            const canPick = compatibleEmptySlots(lineup, p, formationId).length > 0
+                            return (
+                              <PlayerCard
+                                key={p.id}
+                                player={p}
+                                mode={mode}
+                                teamLabel={displayPoolLabel(rolledPool)}
+                                onClick={canPick ? () => pick(p) : undefined}
+                                disabled={!canPick}
+                              />
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-3">
-            <FormationSelector value={formationId} onChange={changeFormation} />
-            <p className="text-xs text-iz-muted uppercase tracking-wider font-heading">{formation.label}</p>
-            <PitchFormation lineup={lineup} formationId={formationId} strict size="lg" />
+          <div className="iz-panel order-2 xl:order-none">
+            <div className="iz-panel-head text-center sm:text-left">
+              {t(formation.nameKey)} <span className="opacity-60 font-normal">({formation.layout})</span>
+            </div>
+            <div className="iz-panel-body flex flex-col items-center gap-2 sm:gap-3 py-3 sm:py-4 w-full">
+              {!formationLocked && (
+                <FormationSelector value={formationId} onChange={changeFormation} />
+              )}
+              <PitchFormation lineup={lineup} formationId={formationId} strict size="lg" />
+            </div>
           </div>
 
-          <BoxScore lineup={lineup} formationId={formationId} strict showPower={mode === 'classic'} />
+          <div className="order-3 xl:order-none">
+            <BoxScore lineup={lineup} formationId={formationId} strict showPower={mode === 'classic'} />
+          </div>
         </div>
       </div>
     </div>

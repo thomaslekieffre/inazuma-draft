@@ -1,5 +1,6 @@
 import type { Player } from '../types'
 import {
+  DEFAULT_FORMATION,
   getFormation,
   type FormationId,
   type LineupMap,
@@ -20,9 +21,14 @@ interface Props {
   size?: 'md' | 'lg'
 }
 
+const AVATAR_CLS =
+  'w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 lg:w-14 lg:h-14 border-0 sm:border'
+const EMPTY_CLS =
+  'w-7 h-7 sm:w-9 sm:h-9 md:w-11 md:h-11 lg:w-14 lg:h-14'
+
 export default function PitchFormation({
   lineup,
-  formationId = '433',
+  formationId = DEFAULT_FORMATION,
   selectedSlot,
   selectedPlayer,
   onSlotClick,
@@ -31,12 +37,13 @@ export default function PitchFormation({
   size = 'lg',
 }: Props) {
   const formation = getFormation(formationId)
-  const maxW = size === 'lg' ? 'max-w-[480px]' : 'max-w-[360px]'
-  const avatarSize = size === 'lg' ? 'lg' : 'md'
-  const emptySize = size === 'lg' ? 'w-[4.5rem] h-[4.5rem]' : 'w-14 h-14'
+  const maxW =
+    size === 'lg'
+      ? 'max-w-[min(64vw,220px)] sm:max-w-[280px] md:max-w-[360px] lg:max-w-[400px]'
+      : 'max-w-[min(60vw,200px)] sm:max-w-[260px] md:max-w-[320px]'
 
   return (
-    <div className={`relative w-full aspect-[3/4] ${maxW} mx-auto pitch-frame`}>
+    <div className={`relative w-full aspect-[3/4] ${maxW} mx-auto pitch-frame pitch-frame--compact`}>
       <div className="absolute inset-0 bg-iz-pitch" />
       <div className="absolute inset-[8%] border-2 border-white/40 rounded-sm" />
       <div className="absolute top-1/2 left-[8%] right-[8%] h-0.5 bg-white/35" />
@@ -65,9 +72,9 @@ export default function PitchFormation({
             type="button"
             disabled={!interactive}
             onClick={() => interactive && onSlotClick?.(slot.id)}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 transition-all
+            className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0 transition-all pitch-slot max-w-[20%]
               ${interactive ? 'cursor-pointer' : 'cursor-default'}
-              ${isSelected ? 'scale-110 z-10' : ''}
+              ${isSelected ? 'scale-105 z-10' : ''}
               ${canReceive && empty ? 'animate-pulse-gold' : ''}`}
             style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
           >
@@ -75,19 +82,27 @@ export default function PitchFormation({
               <>
                 <PlayerAvatar
                   player={player}
-                  size={avatarSize}
-                  className={`${isSelected ? 'ring-2 ring-iz-orange' : ''} ${invalid ? 'ring-2 ring-red-500' : 'ring-2 ring-iz-cyan/40'}`}
+                  size="xs"
+                  className={`${AVATAR_CLS}
+                    ${isSelected ? 'ring-1 sm:ring-2 ring-iz-orange' : ''}
+                    ${invalid ? 'ring-1 sm:ring-2 ring-red-500' : 'ring-1 sm:ring-2 ring-iz-cyan/50'}`}
                 />
-                <span className={`text-[10px] font-bold px-1.5 rounded truncate max-w-[88px] font-heading
-                  ${invalid ? 'text-red-200 bg-red-900/70' : 'pitch-slot-dark'}`}>
+                <span
+                  className={`pitch-slot__name mt-px text-[6px] sm:text-[7px] md:text-[9px] font-bold px-0.5 sm:px-1 py-px rounded truncate w-full text-center font-heading leading-none
+                  ${invalid ? 'text-red-200 bg-red-900/70' : 'pitch-slot-dark'}`}
+                >
                   {player.name.split(' ').pop()}
                 </span>
-                <span className="text-[9px] text-iz-cyan/90 font-bold">{slot.role}</span>
+                <span className="pitch-slot__role text-[5px] sm:text-[7px] text-iz-cyan/80 font-bold hidden md:inline leading-none mt-px">
+                  {slot.role}
+                </span>
               </>
             ) : (
-              <div className={`${emptySize} rounded-full border-2 border-dashed flex flex-col items-center justify-center
-                ${canReceive ? 'border-iz-orange bg-iz-orange/15' : isSelected ? 'border-iz-orange bg-iz-orange/25' : 'pitch-slot-empty'}`}>
-                <span className="text-xs font-bold font-heading">{slot.role}</span>
+              <div
+                className={`${EMPTY_CLS} rounded-full border border-dashed sm:border-2 flex items-center justify-center
+                ${canReceive ? 'border-iz-orange bg-iz-orange/15' : isSelected ? 'border-iz-orange bg-iz-orange/25' : 'pitch-slot-empty'}`}
+              >
+                <span className="text-[7px] sm:text-[9px] md:text-[10px] font-bold font-heading">{slot.role}</span>
               </div>
             )}
           </button>

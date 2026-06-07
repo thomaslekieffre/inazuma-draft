@@ -23,8 +23,8 @@ export default {
         },
       },
       fontFamily: {
-        heading: ['var(--font-heading)'],
-        body: ['var(--font-body)'],
+        heading: ['Barlow Condensed', 'var(--font-heading)'],
+        body: ['Nunito Sans', 'var(--font-body)'],
       },
       boxShadow: {
         'iz-orange': '0 0 24px rgba(255, 107, 26, 0.45)',

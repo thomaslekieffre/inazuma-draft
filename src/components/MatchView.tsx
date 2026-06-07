@@ -15,7 +15,9 @@ export default function MatchView({ result, highlightTeam }: Props) {
   const penEvents = result.events.filter(e => e.type === 'penalty')
 
   return (
-    <div className="card p-4 animate-fade-in">
+    <div className="iz-panel animate-fade-in">
+      <div className="iz-panel-head text-center">Match</div>
+      <div className="iz-panel-body">
       <div className="flex items-center justify-center gap-6 mb-4">
         <div className={`text-center flex-1 ${winner === 0 ? 'text-accent' : 'text-iz-text'}`}>
           <div className="text-sm text-iz-muted mb-1 font-heading">{result.team1Name}</div>
@@ -75,6 +77,7 @@ export default function MatchView({ result, highlightTeam }: Props) {
       {regEvents.length === 0 && penEvents.length === 0 && (
         <div className="text-center text-iz-muted text-sm border-t divider-iz pt-3">{t('match.draw')}</div>
       )}
+      </div>
     </div>
   )
 }

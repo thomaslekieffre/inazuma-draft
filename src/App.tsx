@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import type { GamePhase, Player } from './types'
-import type { LineupMap } from './lib/lineup'
-import { lineupToArray } from './lib/lineup'
+import { DEFAULT_FORMATION, lineupToArray, type FormationId, type LineupMap } from './lib/lineup'
 import { useAppSettings } from './context/AppSettings'
 import AppLayout from './components/AppLayout'
 import Landing from './components/Landing'
@@ -28,12 +27,14 @@ export default function App() {
   const [mode, setMode] = useState<'classic' | 'memory'>('classic')
   const [drafted, setDrafted] = useState<Player[]>([])
   const [lineup, setLineup] = useState<LineupMap>({})
+  const [formationId, setFormationId] = useState<FormationId>(DEFAULT_FORMATION)
   const [won, setWon] = useState(false)
 
   function reset() {
     setPhase('landing')
     setDrafted([])
     setLineup({})
+    setFormationId(DEFAULT_FORMATION)
     setWon(false)
   }
 
@@ -59,12 +60,13 @@ export default function App() {
       <AppLayout>
         <Draft
           mode={mode}
-          onComplete={(p, l, teamsRolled) => {
+          onComplete={(p, l, teamsRolled, formation) => {
             recordDraftComplete(p, teamsRolled)
             recordGlobalDraftComplete()
             trackEvent('draft_complete', { players: p.length, teams_rolled: teamsRolled.length })
             setDrafted(p)
             setLineup(l)
+            setFormationId(formation)
             setPhase('lineup')
           }}
         />
@@ -78,6 +80,7 @@ export default function App() {
         <LineupReview
           players={drafted}
           lineup={lineup}
+          formationId={formationId}
           mode={mode}
           onLineupChange={setLineup}
           onConfirm={() => setPhase('tournament')}
@@ -90,7 +93,7 @@ export default function App() {
     return (
       <AppLayout>
         <Tournament
-          playerTeam={lineupToArray(lineup)}
+          playerTeam={lineupToArray(lineup, formationId)}
           onEnd={(outcome: TournamentOutcome) => {
             recordTournamentOutcome(outcome)
             if (outcome.stage === 'final') {
@@ -125,7 +128,7 @@ export default function App() {
           </>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-w-lg mb-8 stagger">
-          {lineupToArray(lineup).map(p => (
+          {lineupToArray(lineup, formationId).map(p => (
             <PlayerCard key={p.id} player={p} mode={mode} compact />
           ))}
         </div>

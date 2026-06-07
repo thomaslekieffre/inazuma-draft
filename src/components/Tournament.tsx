@@ -156,16 +156,19 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
   const lostSemi = semiResult && matchWinner(semiResult) !== 0
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="max-w-2xl mx-auto">
-        <h2 className="font-heading text-2xl font-bold mb-6 text-iz-heading">
-          {t('tournament.title')} <span className="text-accent">{t('tournament.place')}</span>
-        </h2>
+    <div className="p-3 sm:p-4 md:p-6">
+      <div className="max-w-2xl mx-auto w-full">
+        <div className="iz-panel mb-6">
+          <div className="iz-panel-head">
+            {t('tournament.title')} — {t('tournament.place')}
+          </div>
+        </div>
 
         {phase === 'intro' && (
-          <div className="animate-fade-in text-center">
+          <div className="iz-panel animate-fade-in">
+            <div className="iz-panel-body text-center">
             <p className="text-iz-text mb-6">{t('tournament.intro')}</p>
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <TeamList
                 title={t('tournament.blocA')}
                 teams={[PLAYER_NAME, ...playerOpponents.map(o => o.name)]}
@@ -177,6 +180,7 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
               />
             </div>
             <button type="button" onClick={startGroups} className="btn-primary">{t('tournament.start')}</button>
+            </div>
           </div>
         )}
 
@@ -192,7 +196,8 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
             </p>
 
             {!currentMatch ? (
-              <div className="card p-6 text-center">
+              <div className="iz-panel">
+                <div className="iz-panel-body text-center">
                 <p className="text-iz-text mb-2 font-heading text-lg">
                   {t('tournament.vs', { home: PLAYER_NAME, away: playerOpponents[matchIdx].name })}
                 </p>
@@ -202,6 +207,7 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
                 <button type="button" onClick={runCurrentMatch} className="btn-primary w-full">
                   {t('tournament.playMatch')}
                 </button>
+                </div>
               </div>
             ) : (
               <>
@@ -288,13 +294,15 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
 
 function TeamList({ title, teams, highlight }: { title: string; teams: string[]; highlight?: string }) {
   return (
-    <div className="card p-3 text-left">
-      <h4 className="font-heading text-xs text-iz-cyan uppercase mb-2 font-bold">{title}</h4>
+    <div className="iz-panel text-left">
+      <div className="iz-panel-head !text-[0.65rem]">{title}</div>
+      <div className="iz-panel-body !py-2 !px-3">
       <ul className="text-xs space-y-1">
         {teams.map(team => (
           <li key={team} className={team === highlight ? 'text-accent font-bold' : 'text-iz-text'}>{team}</li>
         ))}
       </ul>
+      </div>
     </div>
   )
 }

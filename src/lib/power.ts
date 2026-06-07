@@ -1,6 +1,6 @@
 import type { Player, PlayerStats, Position } from '../types'
 import { ALL_PLAYERS } from '../data/players'
-import { lineupToArray, type FormationId, type LineupMap } from './lineup'
+import { DEFAULT_FORMATION, lineupToArray, type FormationId, type LineupMap } from './lineup'
 
 /** Stats affichées par poste */
 export const POSITION_STAT_KEYS: Record<Position, (keyof PlayerStats)[]> = {
@@ -96,6 +96,6 @@ export function teamPower(players: Player[]): number {
   return players.reduce((sum, p) => sum + playerRating(p), 0)
 }
 
-export function lineupPower(lineup: LineupMap, formationId: FormationId = '433'): number {
+export function lineupPower(lineup: LineupMap, formationId: FormationId = DEFAULT_FORMATION): number {
   return teamPower(lineupToArray(lineup, formationId))
 }

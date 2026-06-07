@@ -6,48 +6,68 @@ interface Props {
   onStart: () => void
 }
 
+const FEATURES = ['landing.feat.players', 'landing.feat.games', 'landing.feat.ffi'] as const
+
 export default function Landing({ mode, onModeChange, onStart }: Props) {
   const { t } = useAppSettings()
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 animate-fade-in relative overflow-hidden">
-      <div
-        className="absolute inset-0 pointer-events-none opacity-30"
-        style={{
-          backgroundImage:
-            'repeating-linear-gradient(-45deg, transparent, transparent 40px, rgba(0,212,255,0.03) 40px, rgba(0,212,255,0.03) 41px)',
-        }}
-      />
+    <section className="landing-hero w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 animate-fade-in">
+      <div className="landing-hero__grid grid lg:grid-cols-[minmax(0,1.15fr)_minmax(300px,440px)] gap-5 sm:gap-6 lg:gap-7 items-center">
+        <div className="landing-hero__brand text-center lg:text-left order-2 lg:order-1">
+          <p className="landing-hero__eyebrow">{t('landing.subtitle')}</p>
+          <h1 className="landing-hero__title">
+            <span className="text-inazuma block">INAZUMA</span>
+            <span className="landing-hero__draft block">DRAFT</span>
+          </h1>
+          <p className="landing-hero__tagline text-iz-text">{t('landing.tagline1')}</p>
+          <p className="landing-hero__tagline text-iz-muted mb-5">{t('landing.tagline2')}</p>
 
-      <div className="text-center max-w-lg relative z-10">
-        <p className="text-xs tracking-[0.35em] text-iz-cyan uppercase mb-4 font-heading font-bold">
-          {t('landing.subtitle')}
-        </p>
-        <h1 className="font-heading text-6xl md:text-8xl font-black text-inazuma mb-1 drop-shadow-lg">INAZUMA</h1>
-        <h1 className="font-heading text-5xl md:text-7xl font-black text-iz-heading mb-6 tracking-tight">DRAFT</h1>
-        <p className="text-lg text-iz-text mb-1">{t('landing.tagline1')}</p>
-        <p className="text-lg text-iz-muted mb-10">{t('landing.tagline2')}</p>
-
-        <div className="flex gap-2 justify-center mb-8">
-          {(['classic', 'memory'] as const).map(m => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => onModeChange(m)}
-              className={`seg-btn seg-btn--md ${mode === m ? 'seg-btn--on' : 'seg-btn--off'}`}
-            >
-              {m === 'classic' ? t('landing.mode.classic') : t('landing.mode.memory')}
-            </button>
-          ))}
+          <ul className="landing-features flex flex-wrap justify-center lg:justify-start gap-2.5">
+            {FEATURES.map(key => (
+              <li key={key} className="landing-feature">
+                {t(key)}
+              </li>
+            ))}
+          </ul>
         </div>
-        <p className="text-xs text-iz-muted mb-8">
-          {mode === 'classic' ? t('landing.mode.classicHint') : t('landing.mode.memoryHint')}
-        </p>
 
-        <button type="button" onClick={onStart} className="btn-primary animate-pulse-gold text-xl px-12 rounded-lg">
-          {t('landing.play')}
-        </button>
+        <div className="landing-panel iz-panel order-1 lg:order-2 w-full max-w-lg mx-auto lg:max-w-none lg:mx-0 shadow-xl">
+          <div className="iz-panel-head text-center">{t('landing.subtitle')}</div>
+          <div className="iz-panel-body text-center">
+            <p className="text-sm font-heading font-bold uppercase tracking-widest text-iz-muted mb-5">
+              Mode
+            </p>
+
+            <div className="grid grid-cols-2 gap-2.5 sm:gap-3 mb-4">
+              {(['classic', 'memory'] as const).map(m => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => onModeChange(m)}
+                  className={`landing-mode-btn ${mode === m ? 'landing-mode-btn--on' : 'landing-mode-btn--off'}`}
+                >
+                  <span className="landing-mode-btn__label">
+                    {m === 'classic' ? t('landing.mode.classic') : t('landing.mode.memory')}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-sm text-iz-muted mb-6 min-h-[2.75rem] leading-relaxed px-1">
+              {mode === 'classic' ? t('landing.mode.classicHint') : t('landing.mode.memoryHint')}
+            </p>
+
+            <button
+              type="button"
+              onClick={onStart}
+              className="btn-primary w-full animate-pulse-gold text-lg sm:text-xl px-10 sm:px-14 min-h-[3.5rem]"
+            >
+              {t('landing.play')}
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }

@@ -31,7 +31,7 @@ function readStored<T extends string>(key: string, fallback: T, allowed: T[]): T
 }
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => readStored('iz-theme', 'dark', ['dark', 'light']))
+  const [theme, setThemeState] = useState<Theme>(() => readStored('iz-theme', 'light', ['dark', 'light']))
   const [locale, setLocaleState] = useState<Locale>(() => readStored('iz-locale', 'fr', ['fr', 'en']))
 
   useEffect(() => {

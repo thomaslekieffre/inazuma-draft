@@ -4,42 +4,39 @@ import { useAppSettings } from '../context/AppSettings'
 import RulesModal from './RulesModal'
 
 export default function TopBar() {
-  const { theme, locale, toggleTheme, setLocale, t } = useAppSettings()
+  const { theme, locale, setLocale, toggleTheme, t } = useAppSettings()
   const [rulesOpen, setRulesOpen] = useState(false)
 
   return (
     <>
-      <header className="sticky top-0 z-40 border-b divider-iz bg-iz-bar backdrop-blur-md">
-        <div className="relative max-w-7xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3 shrink-0 z-10">
-            <button
-              type="button"
-              onClick={() => setRulesOpen(true)}
-              className="text-xs font-heading font-bold text-iz-cyan hover:text-iz-orange transition-colors"
-            >
-              📖 {t('nav.rules')}
+      <header className="sticky top-0 z-40 iz-nav safe-top">
+        <div className="relative max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2 min-h-[3rem]">
+          <div className="flex items-center gap-2 shrink-0 z-10 min-w-[4.5rem]">
+            <button type="button" onClick={() => setRulesOpen(true)} className="iz-nav-btn min-h-[2.25rem]">
+              <span aria-hidden>📖</span>
+              <span className="hidden sm:inline ml-1">{t('nav.rules')}</span>
             </button>
           </div>
 
           <a
             href={SITE.url}
-            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 hover:opacity-90 transition-opacity"
+            className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 sm:gap-2 hover:opacity-90 transition-opacity iz-nav-title max-w-[50%]"
           >
-            <img src="/favicon.svg" alt="" className="w-8 h-8 rounded-lg shadow-iz-orange" width={32} height={32} />
-            <span className="font-heading font-black text-sm tracking-tight hidden sm:inline">
-              <span className="text-inazuma">FFI</span>
-              <span className="text-iz-heading"> 6-0</span>
+            <img src="/favicon.svg" alt="" className="w-7 h-7 sm:w-8 sm:h-8 rounded shadow-md shrink-0" width={32} height={32} />
+            <span className="font-heading font-black text-xs sm:text-sm tracking-tight truncate">
+              <span className="text-[#ffe566]">FFI</span>
+              <span> 6-0</span>
             </span>
           </a>
 
-          <div className="flex items-center gap-1 shrink-0 z-10">
+          <div className="flex items-center gap-1 shrink-0 z-10 min-w-[4.5rem] justify-end">
             <div className="seg-group">
               {(['fr', 'en'] as const).map(l => (
                 <button
                   key={l}
                   type="button"
                   onClick={() => setLocale(l)}
-                  className={`seg-btn seg-btn--sm ${locale === l ? 'seg-btn--on' : 'seg-btn--off'}`}
+                  className={`seg-btn seg-btn--sm min-h-[2rem] min-w-[2rem] ${locale === l ? 'seg-btn--on' : 'seg-btn--off'}`}
                 >
                   {l}
                 </button>
@@ -48,7 +45,7 @@ export default function TopBar() {
             <button
               type="button"
               onClick={toggleTheme}
-              className="btn-secondary text-xs py-1 px-2.5 ml-1"
+              className="iz-nav-btn ml-0.5 min-h-[2.25rem] min-w-[2.25rem] flex items-center justify-center"
               title={theme === 'dark' ? t('nav.theme.light') : t('nav.theme.dark')}
             >
               {theme === 'dark' ? '☀️' : '🌙'}

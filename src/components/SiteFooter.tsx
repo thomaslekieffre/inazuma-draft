@@ -5,7 +5,7 @@ export default function SiteFooter() {
   const { t } = useAppSettings()
 
   return (
-    <footer className="mt-auto border-t divider-iz py-6 px-4 text-center text-xs text-iz-muted">
+    <footer className="mt-auto border-t divider-iz py-5 sm:py-6 px-3 sm:px-4 text-center text-xs text-iz-muted pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <p className="mb-2">{t('footer.tagline')}</p>
       <p className="mb-4 font-heading">
         {t('footer.byBefore')}
