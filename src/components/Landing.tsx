@@ -2,13 +2,14 @@ import { useAppSettings } from '../context/AppSettings'
 
 interface Props {
   mode: 'classic' | 'memory'
+  seed: string | null
   onModeChange: (mode: 'classic' | 'memory') => void
   onStart: () => void
 }
 
 const FEATURES = ['landing.feat.players', 'landing.feat.games', 'landing.feat.ffi'] as const
 
-export default function Landing({ mode, onModeChange, onStart }: Props) {
+export default function Landing({ mode, seed, onModeChange, onStart }: Props) {
   const { t } = useAppSettings()
 
   return (
@@ -54,9 +55,15 @@ export default function Landing({ mode, onModeChange, onStart }: Props) {
               ))}
             </div>
 
-            <p className="text-sm text-iz-muted mb-6 min-h-[2.75rem] leading-relaxed px-1">
+            <p className="text-sm text-iz-muted mb-4 min-h-[2.75rem] leading-relaxed px-1">
               {mode === 'classic' ? t('landing.mode.classicHint') : t('landing.mode.memoryHint')}
             </p>
+
+            {seed && (
+              <p className="text-xs text-iz-cyan mb-4 px-2 py-2 rounded border divider-iz bg-iz-deep/40">
+                {t('seed.sharedRun', { seed })}
+              </p>
+            )}
 
             <button
               type="button"

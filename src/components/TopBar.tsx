@@ -4,7 +4,7 @@ import { useAppSettings } from '../context/AppSettings'
 import RulesModal from './RulesModal'
 
 export default function TopBar() {
-  const { theme, locale, setLocale, toggleTheme, t } = useAppSettings()
+  const { theme, locale, sound, setLocale, toggleTheme, toggleSound, t } = useAppSettings()
   const [rulesOpen, setRulesOpen] = useState(false)
 
   return (
@@ -42,6 +42,14 @@ export default function TopBar() {
                 </button>
               ))}
             </div>
+            <button
+              type="button"
+              onClick={toggleSound}
+              className="iz-nav-btn min-h-[2.25rem] min-w-[2.25rem] flex items-center justify-center"
+              title={sound ? t('nav.sound.off') : t('nav.sound.on')}
+            >
+              {sound ? '🔊' : '🔇'}
+            </button>
             <button
               type="button"
               onClick={toggleTheme}

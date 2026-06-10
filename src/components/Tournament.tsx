@@ -4,6 +4,7 @@ import { rollTournamentField } from '../data/ffi-teams'
 import { ffiKnockoutPairings } from '../data/ffi-tournament'
 import { simulateMatch, simulateGroupStage, simulateRemainingGroupMatches, matchWinner } from '../engine/sim'
 import { useAppSettings } from '../context/AppSettings'
+import { playSfx } from '../lib/sfx'
 import type { TournamentOutcome } from '../lib/local-stats'
 import MatchView from './MatchView'
 
@@ -77,6 +78,7 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
     const result = playPlayerMatch(matchIdx)
     setCurrentMatch(result)
     setPlayerMatches(prev => [...prev, result])
+    if (result.score[0] > 0) playSfx('goal')
   }
 
   function finishGroupStage() {
@@ -89,6 +91,7 @@ export default function Tournament({ playerTeam, onEnd }: Props) {
     if (rank <= 2) {
       const { standings: bStandings } = simulateGroupStage(blockB)
       setGroupBStandings(bStandings)
+      playSfx('qualify')
       setPhase('qualified')
     } else {
       setPhase('eliminated')

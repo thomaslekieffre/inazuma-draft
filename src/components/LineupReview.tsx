@@ -16,6 +16,7 @@ import { useAppSettings } from '../context/AppSettings'
 import PitchFormation from './PitchFormation'
 import BoxScore from './BoxScore'
 import PlayerCard from './PlayerCard'
+import ExportTeamButton from './ExportTeamButton'
 import { lineupPower } from '../lib/power'
 
 interface Props {
@@ -119,14 +120,22 @@ export default function LineupReview({ players, lineup: initialLineup, formation
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={onConfirm}
-          disabled={!isValid}
-          className={`btn-primary w-full text-xl py-4 ${!isValid ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {isValid ? t('lineup.launch') : t('lineup.incomplete')}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <ExportTeamButton
+            lineup={lineup}
+            formationId={formationId}
+            mode={mode}
+            className="sm:flex-1"
+          />
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={!isValid}
+            className={`btn-primary flex-1 text-xl py-4 ${!isValid ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
+            {isValid ? t('lineup.launch') : t('lineup.incomplete')}
+          </button>
+        </div>
       </div>
     </div>
   )

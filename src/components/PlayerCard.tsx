@@ -18,13 +18,15 @@ interface Props {
   player: Player
   mode: 'classic' | 'memory'
   onClick?: () => void
+  onCompare?: () => void
+  inCompare?: boolean
   selected?: boolean
   compact?: boolean
   disabled?: boolean
   teamLabel?: string
 }
 
-export default function PlayerCard({ player, mode, onClick, selected, compact, disabled, teamLabel }: Props) {
+export default function PlayerCard({ player, mode, onClick, onCompare, inCompare, selected, compact, disabled, teamLabel }: Props) {
   const { t } = useAppSettings()
 
   if (compact) {
@@ -54,8 +56,21 @@ export default function PlayerCard({ player, mode, onClick, selected, compact, d
       disabled={!interactive}
       className={`zukan-player-card zukan-player-card--${player.element}
         ${selected ? 'zukan-player-card--selected' : ''}
+        ${inCompare ? 'zukan-player-card--compare' : ''}
         ${disabled ? 'zukan-player-card--disabled' : ''}`}
     >
+      {onCompare && (
+        <span
+          role="button"
+          tabIndex={0}
+          aria-label="Compare"
+          onClick={e => { e.stopPropagation(); onCompare() }}
+          onKeyDown={e => { if (e.key === 'Enter') { e.stopPropagation(); onCompare() } }}
+          className={`compare-pin-btn ${inCompare ? 'compare-pin-btn--on' : ''}`}
+        >
+          ⇄
+        </span>
+      )}
       <PlayerAvatar
         player={player}
         size="md"

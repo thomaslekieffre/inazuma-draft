@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { translations, type Locale, type TranslationKey } from '../i18n/translations'
+import { setSfxEnabled } from '../lib/sfx'
 
 export type Theme = 'dark' | 'light'
 
@@ -8,9 +9,11 @@ type Vars = Record<string, string | number>
 interface AppSettingsContextValue {
   theme: Theme
   locale: Locale
+  sound: boolean
   setTheme: (t: Theme) => void
   setLocale: (l: Locale) => void
   toggleTheme: () => void
+  toggleSound: () => void
   t: (key: TranslationKey, vars?: Vars) => string
 }
 
@@ -33,6 +36,7 @@ function readStored<T extends string>(key: string, fallback: T, allowed: T[]): T
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => readStored('iz-theme', 'light', ['dark', 'light']))
   const [locale, setLocaleState] = useState<Locale>(() => readStored('iz-locale', 'fr', ['fr', 'en']))
+  const [sound, setSoundState] = useState(() => readStored('iz-sound', 'on', ['on', 'off']) === 'on')
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -44,15 +48,21 @@ export function AppSettingsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('iz-locale', locale)
   }, [locale])
 
+  useEffect(() => {
+    setSfxEnabled(sound)
+    localStorage.setItem('iz-sound', sound ? 'on' : 'off')
+  }, [sound])
+
   const setTheme = (t: Theme) => setThemeState(t)
   const setLocale = (l: Locale) => setLocaleState(l)
   const toggleTheme = () => setThemeState(t => (t === 'dark' ? 'light' : 'dark'))
+  const toggleSound = () => setSoundState(s => !s)
 
   const t = (key: TranslationKey, vars?: Vars) =>
     interpolate(translations[locale][key], vars)
 
   return (
-    <AppSettingsContext.Provider value={{ theme, locale, setTheme, setLocale, toggleTheme, t }}>
+    <AppSettingsContext.Provider value={{ theme, locale, sound, setTheme, setLocale, toggleTheme, toggleSound, t }}>
       {children}
     </AppSettingsContext.Provider>
   )

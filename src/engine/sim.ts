@@ -1,5 +1,6 @@
 import type { Player, MatchResult, MatchEvent, GroupStanding } from '../types'
 import { teamPower } from '../lib/power'
+import { random } from '../lib/run-rng'
 
 const ELEMENT_ADVANTAGE: Record<string, string> = {
   fire: 'wood', wood: 'air', air: 'earth', earth: 'fire',
@@ -25,8 +26,8 @@ function generateGoalEvents(scoringTeam: 0 | 1, players: Player[], count: number
   const scorers = players.filter(p => p.position === 'FW' || p.position === 'MF')
   if (scorers.length === 0) return []
   return matchMinutes.slice(0, count).map(minute => {
-    const player = scorers[Math.floor(Math.random() * scorers.length)]
-    const move = player.hissatsu[Math.floor(Math.random() * player.hissatsu.length)]
+    const player = scorers[Math.floor(random() * scorers.length)]
+    const move = player.hissatsu[Math.floor(random() * player.hissatsu.length)]
     return { minute, type: 'goal' as const, team: scoringTeam, player: player.name, move }
   })
 }
@@ -46,7 +47,7 @@ function penShooters(team: Player[]): Player[] {
 function penChance(shooter: Player, gk: Player): number {
   const shoot = shooter.stats.kick * 0.55 + shooter.stats.guts * 0.25 + shooter.stats.control * 0.2
   const save = gk.stats.guard * 0.65 + gk.stats.guts * 0.35
-  return Math.max(0.18, Math.min(0.82, 0.48 + (shoot - save) / 175 + (Math.random() - 0.5) * 0.12))
+  return Math.max(0.18, Math.min(0.82, 0.48 + (shoot - save) / 175 + (random() - 0.5) * 0.12))
 }
 
 function takePenalty(
@@ -55,7 +56,7 @@ function takePenalty(
   team: 0 | 1,
   kick: number,
 ): { scored: boolean; event: MatchEvent } {
-  const scored = Math.random() < penChance(shooter, gk)
+  const scored = random() < penChance(shooter, gk)
   return {
     scored,
     event: {
@@ -122,7 +123,7 @@ export function simulateMatch(
   let eg1 = base * ratio * 1.5
   let eg2 = base * (1 - ratio) * 1.5
 
-  const noise = () => (Math.random() - 0.5) * 1.2
+  const noise = () => (random() - 0.5) * 1.2
   let goals1 = Math.round(eg1 + noise())
   let goals2 = Math.round(eg2 + noise())
 
@@ -132,11 +133,11 @@ export function simulateMatch(
   if (!options?.decisive && goals1 === 0 && goals2 === 0) {
     if (ratio >= 0.52) goals1 = 1
     else if (ratio <= 0.48) goals2 = 1
-    else if (Math.random() < 0.5) goals1 = 1
+    else if (random() < 0.5) goals1 = 1
     else goals2 = 1
   }
 
-  const allMinutes = Array.from({ length: goals1 + goals2 }, () => Math.floor(Math.random() * 88) + 2).sort((a, b) => a - b)
+  const allMinutes = Array.from({ length: goals1 + goals2 }, () => Math.floor(random() * 88) + 2).sort((a, b) => a - b)
   const mins1 = allMinutes.filter((_, i) => i < goals1)
   const mins2 = allMinutes.filter((_, i) => i >= goals1)
 

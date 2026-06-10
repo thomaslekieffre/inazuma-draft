@@ -12,11 +12,14 @@ import {
   type FormationId,
   type LineupMap,
 } from '../lib/lineup'
+import { random } from '../lib/run-rng'
+import { playSfx } from '../lib/sfx'
 import { useAppSettings } from '../context/AppSettings'
 import PlayerCard from './PlayerCard'
 import PitchFormation from './PitchFormation'
 import BoxScore from './BoxScore'
 import FormationSelector from './FormationSelector'
+import PlayerComparator from './PlayerComparator'
 import { lineupPower } from '../lib/power'
 
 const TOTAL_ROUNDS = 11
@@ -25,10 +28,12 @@ const POS_ORDER = ['GK', 'DF', 'MF', 'FW'] as const
 
 interface Props {
   mode: 'classic' | 'memory'
+  seed: string | null
+  onCopySeed: () => void
   onComplete: (players: Player[], lineup: LineupMap, poolsRolled: string[], formationId: FormationId) => void
 }
 
-export default function Draft({ mode, onComplete }: Props) {
+export default function Draft({ mode, seed, onCopySeed, onComplete }: Props) {
   const { t } = useAppSettings()
   const [round, setRound] = useState(1)
   const [drafted, setDrafted] = useState<Player[]>([])
@@ -41,6 +46,7 @@ export default function Draft({ mode, onComplete }: Props) {
   const [lastPoolKey, setLastPoolKey] = useState<string | null>(null)
   const [poolsRolled, setPoolsRolled] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [compare, setCompare] = useState<Player[]>([])
 
   const pools = getDraftPools()
   const missing = useMemo(() => missingPositions(lineup, formationId), [lineup, formationId])
@@ -55,6 +61,14 @@ export default function Draft({ mode, onComplete }: Props) {
     setError(null)
   }
 
+  function toggleCompare(player: Player) {
+    setCompare(prev => {
+      if (prev.some(p => p.id === player.id)) return prev.filter(p => p.id !== player.id)
+      if (prev.length >= 2) return [prev[1], player]
+      return [...prev, player]
+    })
+  }
+
   function drawPool(isReroll: boolean) {
     if (isReroll && rerollsLeft <= 0) return
     setError(null)
@@ -66,13 +80,14 @@ export default function Draft({ mode, onComplete }: Props) {
     setTimeout(() => {
       let pool: DraftPool
       do {
-        pool = pools[Math.floor(Math.random() * pools.length)]
+        pool = pools[Math.floor(random() * pools.length)]
       } while (draftPoolKey(pool) === lastPoolKey && pools.length > 1)
 
       setRolledPool(pool)
       setRolledRoster(getTeamRoster(pool))
       setPoolsRolled(prev => [...prev, draftPoolKey(pool)])
       setRolling(false)
+      playSfx('roll')
     }, 800)
   }
 
@@ -120,6 +135,8 @@ export default function Draft({ mode, onComplete }: Props) {
     setLastPoolKey(rolledPool ? draftPoolKey(rolledPool) : null)
     setRolledPool(null)
     setRolledRoster([])
+    setCompare(prev => prev.filter(p => p.id !== player.id))
+    playSfx('pick')
 
     if (nextDrafted.length >= TOTAL_ROUNDS) {
       onComplete(nextDrafted, nextLineup, poolsRolled, formationId)
@@ -150,17 +167,24 @@ export default function Draft({ mode, onComplete }: Props) {
             <span className="truncate">
               {t('draft.title')} — {t('draft.team')}
             </span>
-            <span className="text-[0.65rem] opacity-90 normal-case tracking-normal font-semibold shrink-0">
-              {t('draft.round', { current: round, total: TOTAL_ROUNDS })}
-              {' · '}
-              {t('draft.rerollsGlobal', { left: rerollsLeft, total: TOTAL_REROLLS })}
-              {mode === 'classic' && (
-                <>
-                  {' · '}
-                  {t('stats.teamPower')}{' '}
-                  <strong className="tabular-nums">{totalPower}</strong>
-                </>
+            <span className="text-[0.65rem] opacity-90 normal-case tracking-normal font-semibold shrink-0 flex flex-wrap items-center gap-x-2 gap-y-1 justify-end">
+              {seed && (
+                <button type="button" onClick={onCopySeed} className="seed-pill" title={t('seed.copyHint')}>
+                  {t('seed.label')}: <strong className="tabular-nums">{seed}</strong>
+                </button>
               )}
+              <span>
+                {t('draft.round', { current: round, total: TOTAL_ROUNDS })}
+                {' · '}
+                {t('draft.rerollsGlobal', { left: rerollsLeft, total: TOTAL_REROLLS })}
+                {mode === 'classic' && (
+                  <>
+                    {' · '}
+                    {t('stats.teamPower')}{' '}
+                    <strong className="tabular-nums">{totalPower}</strong>
+                  </>
+                )}
+              </span>
             </span>
           </div>
           {missing.length > 0 && (
@@ -176,6 +200,12 @@ export default function Draft({ mode, onComplete }: Props) {
         {error && (
           <div className="mb-4 alert-error animate-fade-in">
             {error}
+          </div>
+        )}
+
+        {compare.length === 2 && (
+          <div className="mb-4">
+            <PlayerComparator a={compare[0]} b={compare[1]} mode={mode} onClear={() => setCompare([])} />
           </div>
         )}
 
@@ -203,6 +233,9 @@ export default function Draft({ mode, onComplete }: Props) {
                 </div>
                 <div className="px-4 py-2 text-center text-xs text-iz-muted border-b divider-iz">
                   {t('draft.pool', { left: pool.length, total: rolledRoster.length })}
+                  {compare.length > 0 && compare.length < 2 && (
+                    <span className="block mt-1 text-iz-cyan">{t('compare.pickSecond')}</span>
+                  )}
                   {rerollsLeft > 0 && (
                     <button
                       type="button"
@@ -236,6 +269,8 @@ export default function Draft({ mode, onComplete }: Props) {
                                 mode={mode}
                                 teamLabel={displayPoolLabel(rolledPool)}
                                 onClick={canPick ? () => pick(p) : undefined}
+                                onCompare={() => toggleCompare(p)}
+                                inCompare={compare.some(c => c.id === p.id)}
                                 disabled={!canPick}
                               />
                             )
